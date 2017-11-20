@@ -2,19 +2,38 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from read_in_census_data import CensusInfo, DataFrameWrapper
+from collections import Counter
+# All def
+# Combining education together
+def education(x):
+    if 9 <= x <= 11:
+        return 'HS'
+    elif x == 12:
+        return 'AA'
+    elif x == 13:
+        return 'BE'
+    elif x == 14:
+        return 'MS' #masters
+    elif x > 14:
+        return 'HD' #Doctor or professional
+    else:
+        return 'ND'
 
+# combinig enducation together ends
+
+# all def ends
 
 # imports done
 data_dictionary = '5%_PUMS_record_layout.xls'
 ci_states = CensusInfo(data_dictionary)
 states=['alabama','texas','california','florida','illnois','virginia','ohio','alaska','new_york','district_of_colombia']
 textFiles=['revisedpums1_alabama_01','revisedpums1_48','revisedpums1_06','revisedpums1_12','revisedpums1_17','revisedpums1_51','revisedpums1_39','revisedpums1_02','revisedpums1_36','revisedpums1_11']
-
+df = DataFrameWrapper(ci_states)
+df.is_copy = False
 # Creating CSV looping 10 states then commenting out the code
 # textFilesCounter=0
 # for loopingState in states:
 #     one_percent = 'states/'+loopingState+'/'+textFiles[textFilesCounter]+'.txt'
-#     df = DataFrameWrapper(ci_states)
 #     df.fill_frame ([], ci_states.person_record, one_percent, ci_states.one_percent_file,'race','education','income','gender','age','relationship')
 #     df.save_frame('states/'+loopingState+'/'+textFiles[textFilesCounter]+'_extract.csv',header=True)
 #     textFilesCounter+=1
@@ -24,6 +43,7 @@ textFiles=['revisedpums1_alabama_01','revisedpums1_48','revisedpums1_06','revise
 dt_dict ={'serial_no':object,'race':object,'gender':object,'relationship':object}
 avgIncomeDict={}
 stateDict={}
+educationDict={}
 # Lets store states objects to variable.
 p_df_alabama = pd.read_csv('states/'+states[0]+'/'+textFiles[0]+'_extract.csv',dtype=dt_dict)
 p_df_texas = pd.read_csv('states/'+states[1]+'/'+textFiles[1]+'_extract.csv',dtype=dt_dict)
@@ -48,5 +68,26 @@ print avgIncomeDict
 plt.suptitle('Average income in 10 states', fontsize=20)
 plt.bar(range(len(avgIncomeDict)), avgIncomeDict.values(), align='center')
 plt.xticks(range(len(avgIncomeDict)), avgIncomeDict.keys(),rotation=90)
-plt.show()
+# plt.show()
 # Average income ends
+#Education degree VS INCOME of 10 states
+for loopingState in states:
+    incomeOf=stateDict[loopingState]
+    stateIncomeIs=incomeOf[incomeOf['income']>0]['income']
+    mean=round(stateIncomeIs.mean(),2)
+    avgIncomeDict[loopingState]=mean
+#Lets compare mean income and max education of multiple groups overall in 10 states
+#logic- get numbers of education and its corresponding income for every state then average it
+p_df_inc2 = pd.DataFrame()
+for loopingState in states:
+    stateName=stateDict[loopingState]
+    p_df_inc = stateName[stateName['income']>0]
+    p_df_inc.is_copy=None
+    # print p_df_inc['education'].map(education)
+    p_df_inc.loc[:,'Degrees']=p_df_inc['education'].map(education)
+    # print p_df_district_of_colombia
+    dataFrame=p_df_inc.loc[:,['Degrees','income']]
+    p_df_inc2=p_df_inc2.append(dataFrame,ignore_index=True)
+# has all degrees and income of ten states
+plt.show(p_df_inc2.groupby('Degrees').mean().plot(y='income', kind='bar',title='Income Vs Education'))
+#income and max education of multiple groups overall in 10 states ends
