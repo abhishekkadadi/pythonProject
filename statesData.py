@@ -18,8 +18,8 @@ def education(x):
         return 'HD' #Doctor or professional
     else:
         return 'ND'
-
 # combinig enducation together ends
+
 
 # all def ends
 
@@ -89,5 +89,53 @@ for loopingState in states:
     dataFrame=p_df_inc.loc[:,['Degrees','income']]
     p_df_inc2=p_df_inc2.append(dataFrame,ignore_index=True)
 # has all degrees and income of ten states
-plt.show(p_df_inc2.groupby('Degrees').mean().plot(y='income', kind='bar',title='Income Vs Education'))
-#income and max education of multiple groups overall in 10 states ends
+# plt.show(p_df_inc2.groupby('Degrees').mean().plot(y='income', kind='bar',title='Income Vs Education'))
+
+######################whites only income##########################################################################
+#whites n non white only income in 10 states
+whiteIncome=[]
+nonWhiteIncome=[]
+for loopingState in states:
+    stateName = stateDict[loopingState]
+    stateName['white_only'] = stateName['race'].map(lambda x: x == '47')
+    income=stateName['income'].groupby(stateName['white_only']).mean()
+    whiteIncome.append(income[True])
+    nonWhiteIncome.append(income[False])
+meanWhiteIncome=round(np.mean(whiteIncome),2)
+meanNonWhiteIncome=round(np.mean(nonWhiteIncome),2)
+fig, ax  = plt.subplots()
+ax.set_title('Mean White income vs Mean Non White income of 10 states')
+ax.bar([1,2], [meanWhiteIncome,meanNonWhiteIncome,], width=1,
+       tick_label=['Mean White Income', 'Mean Non White Income'], align='center')
+# plt.show()
+#whites n non white only income ends
+
+#whites max education vs non whites max education
+p_df_inc3 = pd.DataFrame()
+whiteOnlyDF=pd.DataFrame()
+nonWhiteOnlyDF=pd.DataFrame()
+for loopingState in states:
+    stateName=stateDict[loopingState]
+    p_df_inc.loc[:, 'Degrees'] = p_df_inc['education'].map(education)
+    dataFrame=p_df_inc.loc[:,['Degrees','race']]
+    p_df_inc3=p_df_inc3.append(dataFrame,ignore_index=True)
+
+whiteOnlyDF=p_df_inc3[p_df_inc3['race'].map(lambda x: x == '47')]
+nonWhiteOnlyDF=p_df_inc3[p_df_inc3['race'].map(lambda x: x != '47')]
+# groupby('Degrees').count()
+df1 = whiteOnlyDF['Degrees'].value_counts()
+df2 = nonWhiteOnlyDF['Degrees'].value_counts()
+df1 = pd.DataFrame({'Degrees':df1.index, 'count':df1.values})
+df2 = pd.DataFrame({'Degrees':df2.index, 'count':df2.values})
+df1['Key'] = 'White'
+df2['Key'] = 'NonWhite'
+
+DF = pd.concat([df1,df2],keys=['White','NonWhite'])
+
+DFGroup = DF.groupby(['Degrees','Key'])
+
+DFGPlot = DFGroup.sum().unstack('Key').plot(kind='bar')
+plt.show()
+# print nonWhiteOnlyDF
+#whites max education vs non whites max education ends
+
